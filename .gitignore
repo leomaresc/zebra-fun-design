@@ -1,0 +1,36 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Entorno
+*.local
+.netlify
+
+# Referencia local (no forma parte del repositorio)
+zpl-zbi2-pg-en.pdf
+bwip-test.mjs
+INTEGRATION.md
