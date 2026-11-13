@@ -126,4 +126,4 @@ src/
 
 ## Licencia
 
-[MIT](LICENSE) © 2026 Leomar
+[MIT](LICENSE) © 2026 Leomar Salazar
