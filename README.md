@@ -35,13 +35,16 @@
 | | |
 | --- | --- |
 | 🎨 **Lienzo completo** | Zoom (Ctrl + rueda), paneo (Espacio + arrastrar), regla en mm, cuadrícula, snap a 10 dots, manejadores para redimensionar, selección marquee, alineación y distribución. |
-| 🔤 **Texto real de Zebra** | Fuentes `0` (escalable) y `A`–`H` (bitmap) con sus métricas exactas, bloques `^FB` con ancho/líneas/espaciado/alineación/sangría, texto invertido `^FR`, origen `^FO`/`^FT` y rotación `N/R/I/B`. |
+| 🔤 **Texto real de Zebra** | Fuentes `0` (escalable) y `A`–`H` (bitmap) con sus métricas exactas, bloques `^FB` con ancho/líneas/espaciado/alineación/sangría, **negrita, cursiva y subrayado**, texto invertido `^FR`, origen `^FO`/`^FT` y rotación `N/R/I/B`. |
 | 📊 **12 simbologías** | Code 128, Code 39, Code 93, EAN-13/8, UPC-A/E, ITF, Codabar, MSI, **QR Code** y **Data Matrix**, con vista previa real vía [bwip-js](https://github.com/bwip-js/bwip-js) y validación de datos. |
 | 🖼️ **Imágenes a 1 bit** | PNG/JPG/WEBP/GIF con umbral, dither Floyd–Steinberg e invertir; se emiten como `^GFA` en hexadecimal, tal como espera la impresora. |
 | 🧩 **5 plantillas** | En blanco, Envío, Producto, Precio e Inventario. Cambian el formato de la etiqueta y se pueden deshacer. |
 | ↩️ **Edición cómoda** | Undo/redo agrupado por gesto, duplicar, copiar/pegar, capas con orden y bloqueo, flechas para mover 1 dot (Shift = 10). |
 | 📦 **Documentos** | 8 presets de formato (100×150, 4×6", 50×25 mm…), DPI 203/300/600 con reescalado del diseño, medio `gap/continuous/mark`, velocidad, oscuridad y copias. |
-| 🌐 **Bilingüe** | Interfaz completa en español e inglés; el idioma se recuerda. |
+| 🌐 **Bilingüe** | Interfaz completa en español e inglés; el idioma se recuerda y **arranca en español**. |
+| 🖨 **Impresión clásica** | Botón *Imprimir*: el lienzo se pinta a tamaño real (en mm) y se abre el diálogo del navegador para mandarlo a la impresora Zebra que tengas instalada. Sin integraciones raras. |
+| ✏️ **Código a tu medida** | Abre el ZPL generado, edítalo o pega uno propio y conviértelo en diseño con un clic. El importador entiende texto, figuras, códigos e imágenes. |
+| 🎯 **Iconos listos** | 19 símbolos (hombre/mujer/unisex, advertencia, frágil, mantener seco, este lado arriba, inflamable, reciclaje, radiactivo…) que se insertan como imagen 1 bit y se imprimen tal cual. |
 
 ## Capturas
 
@@ -85,7 +88,7 @@ npm run dev        # http://localhost:5173
 | Elemento | Comandos emitidos |
 | --- | --- |
 | Cabecera | `^XA` `^CI28` `^PW` `^LL` `^LH0,0` `^MN` `^PR` `^MD` `^PQ` `^XZ` |
-| Texto | `^FR` `^A0`/`^A{A–H}` `^FB` `^FH` `^FD` `^FS` |
+| Texto | `^FR` `^A0`/`^A{A–H}` `^FB` `^FH_` `^FD` `^FS` (+ `^GB` de subrayado y doble campo para negrita) |
 | Figuras | `^GB` (caja/línea) · `^GC` (círculo) · `^GE` (elipse) · `^GD` (diagonal) |
 | Barras 1D | `^BY` + `^BC` `^B3` `^BA` `^BE` `^B8` `^BU` `^B9` `^B2` `^BK` `^BM` |
 | Códigos 2D | `^BQ{rot},2,{magnificación},{ecc},{mask}` · `^BX{rot},{módulo},200` |
@@ -114,6 +117,7 @@ src/
 ## Notas de fidelidad
 
 - La vista previa **aproxima** fuentes y códigos: imprime una prueba antes de producción.
+- **Negrita** se imprime con doble pasada (el campo se emite dos veces) y **subrayado** con `^GB`; **cursiva** no existe en ZPL, así que el texto en cursiva se exporta como imagen 1 bit (`^GFA`) para que salga exactamente igual que en pantalla.
 - Las fuentes `A`–`H` son bitmap y sólo cubren ASCII; para acentos o Unicode usa la fuente `0` (la app te avisa).
 - Los códigos 2D se dibujan a su tamaño natural; la altura del elemento no los deforma.
 - No hay impresión directa ni integración con impresoras: el alcance es **diseñar y exportar ZPL**.

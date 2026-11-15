@@ -27,9 +27,11 @@ function highlight(line: string) {
 export function CodePanel({
   editor,
   onToast,
+  onOpenCode,
 }: {
   editor: Editor;
   onToast: (msg: string) => void;
+  onOpenCode: () => void;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -77,6 +79,7 @@ export function CodePanel({
           {t("code.stats", { fields: stats.fields, lines: lines.length, bytes: stats.bytes })}
         </span>
         <span className="code-actions" onClick={(e) => e.stopPropagation()}>
+          <IconButton icon="code" label={t("code.edit")} onClick={onOpenCode} small />
           <IconButton icon="copy" label={t("export.copy")} onClick={copy} small />
           <IconButton icon="download" label={t("export.download")} onClick={download} small />
         </span>

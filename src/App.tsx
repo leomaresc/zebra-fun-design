@@ -8,10 +8,12 @@ import { Toolrail } from "./components/Toolrail";
 import { CanvasStage } from "./components/CanvasStage";
 import { Inspector } from "./components/Inspector";
 import { CodePanel } from "./components/CodePanel";
-import { ConfirmModal, ExportModal, HelpModal, SetupModal, TemplatesModal } from "./components/Modals";
+import { CodeModal, ConfirmModal, ExportModal, HelpModal, IconsModal, SetupModal, TemplatesModal } from "./components/Modals";
 import { Icon } from "./components/Icon";
+import { drawLabel } from "./render/render";
+import { prepareImage } from "./render/image";
 
-type ModalKind = "setup" | "export" | "templates" | "help" | "clear" | null;
+type ModalKind = "setup" | "export" | "templates" | "help" | "clear" | "code" | "icons" | null;
 
 const TOOL_KEYS: Record<string, Tool> = {
   v: "select",
@@ -52,7 +54,7 @@ export default function App() {
     } catch {
       /* ignore */
     }
-    return navigator.language?.toLowerCase().startsWith("en") ? "en" : "es";
+    return "es";
   });
 
   const setLang = useCallback((next: Lang) => {
@@ -224,6 +226,39 @@ export default function App() {
 
   const onImageAdded = useCallback(() => toast(t("toast.imageReady")), [toast, t]);
 
+  // Impresión clásica: se pinta el lienzo a tamaño real y se abre el diálogo
+  // del navegador (ahí se elige la impresora Zebra instalada).
+  const onPrint = useCallback(async () => {
+    const area = document.getElementById("print-area");
+    if (!area) return;
+    const doc = editor.doc;
+    for (const el of doc.elements) {
+      if (el.type === "image") await prepareImage(el);
+    }
+    area.replaceChildren();
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, doc.widthDots);
+    canvas.height = Math.max(1, doc.heightDots);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawLabel(ctx, doc, { zoom: 1, showGrid: false, exporting: true });
+    canvas.style.width = `${doc.widthMm}mm`;
+    canvas.style.height = `${doc.heightMm}mm`;
+    canvas.style.display = "block";
+    area.appendChild(canvas);
+
+    let pageStyle = document.getElementById("zfd-print-page");
+    if (!pageStyle) {
+      pageStyle = document.createElement("style");
+      pageStyle.id = "zfd-print-page";
+      document.head.appendChild(pageStyle);
+    }
+    pageStyle.textContent = `@media print { @page { size: ${doc.widthMm}mm ${doc.heightMm}mm; margin: 0; } }`;
+    window.setTimeout(() => window.print(), 80);
+  }, [editor.doc]);
+
   return (
     <I18nContext.Provider value={i18n}>
       <div className="app">
@@ -237,6 +272,7 @@ export default function App() {
           redo={editor.redo}
           onSetup={() => setModal("setup")}
           onExport={() => setModal("export")}
+          onPrint={() => void onPrint()}
           onTemplates={() => setModal("templates")}
           onHelp={() => setModal("help")}
           saveState={editor.saveState}
@@ -245,7 +281,7 @@ export default function App() {
         />
 
         <div className="workspace">
-          <Toolrail tool={tool} setTool={setTool} />
+          <Toolrail tool={tool} setTool={setTool} onOpenIcons={() => setModal("icons")} />
           <CanvasStage
             editor={editor}
             tool={tool}
@@ -263,14 +299,18 @@ export default function App() {
           />
         </div>
 
-        <CodePanel editor={editor} onToast={toast} />
+        <CodePanel editor={editor} onToast={toast} onOpenCode={() => setModal("code")} />
 
         {modal === "setup" ? <SetupModal editor={editor} onClose={close} /> : null}
-        {modal === "export" ? <ExportModal editor={editor} onClose={close} onToast={toast} /> : null}
+        {modal === "export" ? (
+          <ExportModal editor={editor} onClose={close} onToast={toast} onOpenCode={() => setModal("code")} />
+        ) : null}
         {modal === "templates" ? (
           <TemplatesModal editor={editor} onClose={close} onToast={toast} />
         ) : null}
         {modal === "help" ? <HelpModal onClose={close} /> : null}
+        {modal === "code" ? <CodeModal editor={editor} onClose={close} onToast={toast} /> : null}
+        {modal === "icons" ? <IconsModal editor={editor} onClose={close} onToast={toast} /> : null}
         {modal === "clear" ? (
           <ConfirmModal
             title={t("confirm.clear")}
@@ -290,6 +330,8 @@ export default function App() {
           ))}
         </div>
       </div>
+
+      <div id="print-area" aria-hidden="true" />
     </I18nContext.Provider>
   );
 }

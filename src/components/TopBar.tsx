@@ -13,6 +13,7 @@ export function TopBar({
   redo,
   onSetup,
   onExport,
+  onPrint,
   onTemplates,
   onHelp,
   saveState,
@@ -28,6 +29,7 @@ export function TopBar({
   redo: () => void;
   onSetup: () => void;
   onExport: () => void;
+  onPrint: () => void;
   onTemplates: () => void;
   onHelp: () => void;
   saveState: "saved" | "saving";
@@ -100,6 +102,10 @@ export function TopBar({
           className="drawer-toggle"
         />
 
+        <button className="btn" type="button" onClick={onPrint} title={t("top.print")}>
+          <Icon name="printer" size={15} />
+          <span className="btn-label">{t("top.print")}</span>
+        </button>
         <button className="btn btn-primary" type="button" onClick={onExport}>
           <Icon name="download" size={15} />
           <span className="btn-label">{t("top.export")}</span>

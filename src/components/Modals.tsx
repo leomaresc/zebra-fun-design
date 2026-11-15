@@ -5,7 +5,10 @@ import { LABEL_PRESETS, mmToDots, presetDots } from "../types";
 import { buildTemplate, TEMPLATES, type TemplateId } from "../data/templates";
 import { boundsOf, drawLabel } from "../render/render";
 import { generateZPL } from "../zpl/generate";
+import { parseZPL, parsedDocPatch } from "../zpl/parse";
 import { barcodeRender, validateBarcode } from "../zpl/barcode";
+import { ICONS, renderIcon, type IconDef } from "../data/icons";
+import { newImage } from "../factory";
 import { getProcessed, prepareImage } from "../render/image";
 import { useI18n } from "../i18n";
 import { Field, Modal, NumberField, Segmented } from "./ui";
@@ -271,10 +274,12 @@ export function ExportModal({
   editor,
   onClose,
   onToast,
+  onOpenCode,
 }: {
   editor: Editor;
   onClose: () => void;
   onToast: (msg: string, error?: boolean) => void;
+  onOpenCode: () => void;
 }) {
   const { t, lang } = useI18n();
   const doc = editor.doc;
@@ -316,12 +321,14 @@ export function ExportModal({
     let unicode = false;
     let pendingImage = false;
     let outside = false;
+    let italic = false;
 
     for (const el of doc.elements) {
       if (el.type === "barcode") {
         if (validateBarcode(el.symbology, el.data, lang) || barcodeRender(el).error) badCode = true;
       }
       if (el.type === "text" && el.font !== "0" && /[^\x00-\x7F]/.test(el.text)) unicode = true;
+      if (el.type === "text" && el.italic) italic = true;
       if (el.type === "image" && !getProcessed(el)) pendingImage = true;
       const b = boundsOf(el);
       if (b.x < 0 || b.y < 0 || b.x + b.w > doc.widthDots + 1 || b.y + b.h > doc.heightDots + 1) outside = true;
@@ -329,6 +336,7 @@ export function ExportModal({
 
     if (badCode) out.push(t("export.warnBarcode"));
     if (unicode) out.push(t("export.warnUnicode"));
+    if (italic) out.push(t("export.warnItalic"));
     if (pendingImage) out.push(t("export.warnImage"));
     if (outside) out.push(t("export.warnSize"));
     return out;
@@ -455,6 +463,18 @@ export function ExportModal({
               {t("export.open")}
             </span>
             <span className="ec-body">{t("export.openHint")}</span>
+          </button>
+          <button
+            className="export-card"
+            type="button"
+            onClick={onOpenCode}
+            style={{ gridColumn: "1 / -1" }}
+          >
+            <span className="ec-title">
+              <Icon name="code" size={15} />
+              {t("code.open")}
+            </span>
+            <span className="ec-body">{t("code.subtitle")}</span>
           </button>
         </div>
 
@@ -668,6 +688,179 @@ export function ConfirmModal({
       <p className="help-text" style={{ margin: 0 }}>
         {body}
       </p>
+    </Modal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* código ZPL: editar o importar                                       */
+/* ------------------------------------------------------------------ */
+
+export function CodeModal({
+  editor,
+  onClose,
+  onToast,
+}: {
+  editor: Editor;
+  onClose: () => void;
+  onToast: (msg: string, error?: boolean) => void;
+}) {
+  const { t } = useI18n();
+  const current = useMemo(() => generateZPL(editor.doc), [editor.doc]);
+  const [code, setCode] = useState(current);
+  const file = useRef<HTMLInputElement>(null);
+
+  const apply = () => {
+    if (!code.trim()) {
+      onToast(t("toast.codeEmpty"), true);
+      return;
+    }
+    const parsed = parseZPL(code);
+    if (!parsed.elements.length && !parsed.widthDots) {
+      onToast(t("toast.codeEmpty"), true);
+      return;
+    }
+    editor.replaceDoc({ ...editor.doc, ...parsedDocPatch(parsed, editor.doc) });
+    onToast(t("toast.codeApplied"));
+    onClose();
+  };
+
+  const loadFile = async (f: File | undefined | null) => {
+    if (!f) return;
+    try {
+      setCode(await f.text());
+    } catch {
+      onToast(t("toast.importError"), true);
+    }
+  };
+
+  return (
+    <Modal
+      title={t("code.title")}
+      subtitle={t("code.subtitle")}
+      onClose={onClose}
+      size="wide"
+      footer={
+        <>
+          <span className="tiny muted" style={{ flex: 1, lineHeight: 1.4 }}>
+            {t("code.hint")}
+          </span>
+          <button className="btn" type="button" onClick={onClose}>
+            {t("common.cancel")}
+          </button>
+          <button className="btn btn-primary" type="button" onClick={apply}>
+            <Icon name="check" size={14} />
+            {t("code.apply")}
+          </button>
+        </>
+      }
+    >
+      <div className="stack">
+        <textarea
+          className="textarea mono code-editor"
+          value={code}
+          rows={16}
+          spellCheck={false}
+          placeholder={t("code.empty")}
+          onChange={(e) => setCode(e.target.value)}
+        />
+        <div className="row">
+          <button className="btn btn-sm" type="button" onClick={() => file.current?.click()}>
+            <Icon name="upload" size={13} />
+            {t("code.load")}
+          </button>
+          <button className="btn btn-sm" type="button" onClick={() => setCode(current)}>
+            <Icon name="undo" size={13} />
+            {t("setup.reset")}
+          </button>
+          <span className="spacer" />
+          <span className="tiny muted mono">{code.split("\n").length} ln</span>
+        </div>
+        <input
+          ref={file}
+          type="file"
+          accept=".zpl,.txt,text/plain"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            void loadFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+      </div>
+    </Modal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* iconos                                                              */
+/* ------------------------------------------------------------------ */
+
+function IconPreview({ def }: { def: IconDef }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const dpr = 3;
+    const size = 42;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    def.draw(ctx, size);
+    ctx.restore();
+  }, [def]);
+  return <canvas ref={ref} style={{ width: 42, height: 42 }} />;
+}
+
+export function IconsModal({
+  editor,
+  onClose,
+  onToast,
+}: {
+  editor: Editor;
+  onClose: () => void;
+  onToast: (msg: string) => void;
+}) {
+  const { t } = useI18n();
+  const doc = editor.doc;
+
+  const insert = (def: IconDef) => {
+    const src = renderIcon(def, 512);
+    if (!src) return;
+    const dots = Math.max(40, Math.round(Math.min(doc.widthDots, doc.heightDots) * 0.2));
+    const x = Math.round((doc.widthDots - dots) / 2);
+    const y = Math.round((doc.heightDots - dots) / 2);
+    editor.addElement(newImage(x, y, src, dots, dots));
+    onToast(t("toast.icon"));
+    onClose();
+  };
+
+  return (
+    <Modal
+      title={t("icons.title")}
+      subtitle={t("icons.subtitle")}
+      onClose={onClose}
+      size="wide"
+      footer={
+        <>
+          <span className="spacer" />
+          <button className="btn" type="button" onClick={onClose}>
+            {t("common.close")}
+          </button>
+        </>
+      }
+    >
+      <div className="icon-grid">
+        {ICONS.map((def) => (
+          <button key={def.id} type="button" className="icon-card" onClick={() => insert(def)}>
+            <IconPreview def={def} />
+            <span>{t(`icon.${def.id}` as never)}</span>
+          </button>
+        ))}
+      </div>
     </Modal>
   );
 }

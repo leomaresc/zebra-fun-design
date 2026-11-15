@@ -1,6 +1,7 @@
 import type { BarcodeElement, Doc, LabelElement, TextElement } from "../types";
 import { fontDef } from "./fonts";
 import { getProcessed } from "../render/image";
+import { rasterizeElement, textBoldOffset, textUnderlineRects } from "../render/render";
 import { barcodeHumanText } from "./barcode";
 
 function cleanComment(value: string): string {
@@ -18,8 +19,22 @@ function escapeHex(text: string): { hex: boolean; data: string } {
 }
 
 function fdLines(text: string, indent = ""): string[] {
-  const { hex, data } = escapeHex(text.replace(/\n/g, "\\&"));
-  return [...(hex ? [`${indent}^FH_`] : []), `${indent}^FD${data}`];
+  const { data } = escapeHex(text.replace(/\n/g, "\\&"));
+  // ^FH_ siempre: el indicador queda explícito campo a campo, así la impresora
+  // y el importador decodifican _XX de la misma manera sin heredar estado.
+  return [`${indent}^FH_`, `${indent}^FD${data}`];
+}
+
+function hexRows(bits: Uint8Array, bytesPerRow: number, height: number): string[] {
+  const rows: string[] = [];
+  for (let y = 0; y < height; y++) {
+    let row = "";
+    for (let x = 0; x < bytesPerRow; x++) {
+      row += bits[y * bytesPerRow + x].toString(16).toUpperCase().padStart(2, "0");
+    }
+    rows.push(row);
+  }
+  return rows;
 }
 
 function clampInt(value: number, min: number, max = 32000): number {
@@ -29,6 +44,31 @@ function clampInt(value: number, min: number, max = 32000): number {
 function fieldOrigin(el: LabelElement, useFt: boolean): string {
   if (useFt && el.type === "text" && el.origin === "FT") return `^FT${Math.round(el.x)},${Math.round(el.y)}`;
   return `^FO${Math.round(el.x)},${Math.round(el.y)}`;
+}
+
+/** Campo de texto completo (origen, fuente, bloque y datos). */
+function textFieldZPL(el: TextElement, x: number, y: number): string[] {
+  const out: string[] = [];
+  out.push(
+    el.origin === "FT" ? `^FT${Math.round(x)},${Math.round(y)}` : `^FO${Math.round(x)},${Math.round(y)}`,
+  );
+  if (el.reverse) out.push("^FR");
+  const def = fontDef(el.font);
+  const rot = el.rotation;
+  if (el.font === "0") out.push(`^A0${rot},${clampInt(el.h, 1)},${clampInt(el.w, 1)}`);
+  else out.push(`^A${def.key}${rot},${clampInt(el.h, 1)},${clampInt(el.w, 1)}`);
+  if (el.block) {
+    out.push(
+      `^FB${clampInt(el.block.width, 1, 32000)},${clampInt(el.block.lines, 1, 9999)},${clampInt(
+        el.block.spacing,
+        -9999,
+        9999,
+      )},${el.block.align},${clampInt(el.block.indent, 0, 9999)}`,
+    );
+  }
+  out.push(...fdLines(el.text));
+  out.push("^FS");
+  return out;
 }
 
 export function generateZPL(doc: Doc): string {
@@ -58,23 +98,32 @@ function elementZPL(el: LabelElement): string[] {
   switch (el.type) {
     case "text": {
       lines.push(`^FX Texto · ${cleanComment(el.text) || "vacío"}`);
-      lines.push(fieldOrigin(el, true));
-      if (el.reverse) lines.push("^FR");
-      const def = fontDef(el.font);
-      const rot = el.rotation;
-      if (el.font === "0") lines.push(`^A0${rot},${clampInt(el.h, 1)},${clampInt(el.w, 1)}`);
-      else lines.push(`^A${def.key}${rot},${clampInt(el.h, 1)},${clampInt(el.w, 1)}`);
-      if (el.block) {
-        lines.push(
-          `^FB${clampInt(el.block.width, 1, 32000)},${clampInt(el.block.lines, 1, 9999)},${clampInt(
-            el.block.spacing,
-            -9999,
-            9999,
-          )},${el.block.align},${clampInt(el.block.indent, 0, 9999)}`,
-        );
+      const rotated = el.rotation === "R" || el.rotation === "B";
+      // ZPL no tiene cursiva (y ^GB no rota): esos casos van como gráfico 1 bit.
+      if (el.italic || (el.underline && rotated)) {
+        const raster = rasterizeElement(el);
+        if (raster) {
+          const total = raster.bytesPerRow * raster.height;
+          lines.push(`^FO${raster.x},${raster.y}`);
+          lines.push(`^GFA,${total},${total},${raster.bytesPerRow},`);
+          lines.push(...hexRows(raster.bits, raster.bytesPerRow, raster.height));
+          lines.push("^FS");
+          break;
+        }
       }
-      lines.push(...fdLines(el.text));
-      lines.push("^FS");
+      lines.push(...textFieldZPL(el, el.x, el.y));
+      // Negrita por doble pasada (el segundo campo separado 1…n dots).
+      if (el.bold) {
+        lines.push(...textFieldZPL(el, el.x + textBoldOffset(Math.max(1, el.h)), el.y));
+      }
+      if (el.underline && !rotated) {
+        const color = el.reverse ? "W" : "B";
+        for (const r of textUnderlineRects(el)) {
+          lines.push(`^FO${r.x},${r.y}`);
+          lines.push(`^GB${r.w},${r.h},${r.h},${color},0`);
+          lines.push("^FS");
+        }
+      }
       break;
     }
     case "box": {
@@ -143,16 +192,8 @@ function elementZPL(el: LabelElement): string[] {
         break;
       }
       const total = img.bytesPerRow * img.height;
-      const hexRows: string[] = [];
-      for (let y = 0; y < img.height; y++) {
-        let row = "";
-        for (let x = 0; x < img.bytesPerRow; x++) {
-          row += img.bits[y * img.bytesPerRow + x].toString(16).toUpperCase().padStart(2, "0");
-        }
-        hexRows.push(row);
-      }
       lines.push(`^GFA,${total},${total},${img.bytesPerRow},`);
-      lines.push(hexRows.join("\n"));
+      lines.push(...hexRows(img.bits, img.bytesPerRow, img.height));
       lines.push("^FS");
       break;
     }

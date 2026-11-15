@@ -401,6 +401,25 @@ function TextEditor({ editor, el, doc }: { editor: Editor; el: TextElement; doc:
         <span className="tiny muted">{t("inspector.fontHint")}</span>
       </Section>
 
+      <Section title={t("inspector.style")}>
+        <Toggle
+          checked={!!el.bold}
+          label={t("inspector.bold")}
+          onChange={(bold) => editor.updateElement(el.id, { bold })}
+        />
+        <Toggle
+          checked={!!el.italic}
+          label={t("inspector.italic")}
+          onChange={(italic) => editor.updateElement(el.id, { italic })}
+        />
+        <Toggle
+          checked={!!el.underline}
+          label={t("inspector.underline")}
+          onChange={(underline) => editor.updateElement(el.id, { underline })}
+        />
+        {el.italic ? <div className="note">{t("inspector.italicNote")}</div> : null}
+      </Section>
+
       <Section title={t("inspector.block")}>
         <Toggle
           checked={!!el.block}

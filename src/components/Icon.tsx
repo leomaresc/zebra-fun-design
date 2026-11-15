@@ -9,7 +9,7 @@ export type IconName =
   | "eye" | "eyeOff" | "alignLeft" | "alignCenterH" | "alignRight" | "alignTop"
   | "alignCenterV" | "alignBottom" | "distributeH" | "distributeV" | "folder"
   | "code" | "printer" | "fileImage" | "fileJson" | "sparkle" | "warning"
-  | "external" | "keyboard" | "panelRight" | "drag" | "textCursor" | "scan";
+  | "external" | "keyboard" | "panelRight" | "drag" | "textCursor" | "scan" | "icons";
 
 const paths: Record<IconName, ReactNode> = {
   cursor: <path d="M5 3l14 8-6.1 1.7L16.6 20l-2.5 1-3.7-7.4L5 18z" />,
@@ -72,6 +72,7 @@ const paths: Record<IconName, ReactNode> = {
   drag: <><circle cx="9" cy="7" r="1.1" fill="currentColor" stroke="none" /><circle cx="15" cy="7" r="1.1" fill="currentColor" stroke="none" /><circle cx="9" cy="12" r="1.1" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="1.1" fill="currentColor" stroke="none" /><circle cx="9" cy="17" r="1.1" fill="currentColor" stroke="none" /><circle cx="15" cy="17" r="1.1" fill="currentColor" stroke="none" /></>,
   textCursor: <><path d="M9 4h2v16H9" /><path d="M15 4h-2v16h2" /><path d="M6 4h12" /><path d="M6 20h12" /></>,
   scan: <><path d="M4 8V5a1 1 0 011-1h3" /><path d="M16 4h3a1 1 0 011 1v3" /><path d="M20 16v3a1 1 0 01-1 1h-3" /><path d="M8 20H5a1 1 0 01-1-1v-3" /><path d="M4 12h16" /></>,
+  icons: <><circle cx="12" cy="12" r="8.5" /><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none" /><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none" /><path d="M8.6 14.4a4.6 4.6 0 006.8 0" /></>,
 };
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {

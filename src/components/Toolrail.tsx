@@ -14,7 +14,15 @@ const TOOLS: { tool: Tool; icon: IconName; label: string; key: string; group: nu
   { tool: "image", icon: "image", label: "tool.image", key: "I", group: 2 },
 ];
 
-export function Toolrail({ tool, setTool }: { tool: Tool; setTool: (t: Tool) => void }) {
+export function Toolrail({
+  tool,
+  setTool,
+  onOpenIcons,
+}: {
+  tool: Tool;
+  setTool: (t: Tool) => void;
+  onOpenIcons: () => void;
+}) {
   const { t } = useI18n();
   return (
     <nav className="toolrail" aria-label={t("tool.group.draw")}>
@@ -36,6 +44,16 @@ export function Toolrail({ tool, setTool }: { tool: Tool; setTool: (t: Tool) => 
           </div>
         );
       })}
+      <div className="tool-sep" />
+      <button
+        type="button"
+        className="tool"
+        data-tip={t("tool.icons")}
+        aria-label={t("tool.icons")}
+        onClick={onOpenIcons}
+      >
+        <Icon name="icons" size={19} />
+      </button>
       <div className="tool-spacer" />
       <div className="tool-sep" />
       <button

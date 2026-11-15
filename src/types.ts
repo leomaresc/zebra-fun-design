@@ -53,6 +53,12 @@ export interface TextElement extends BaseElement {
   w: number;
   reverse: boolean;
   block: TextBlock | null;
+  /** Negrita: se imprime a doble pasada (^FD dos veces). */
+  bold?: boolean;
+  /** Cursiva: ZPL no tiene cursiva, se exporta como gráfico ^GFA. */
+  italic?: boolean;
+  /** Subrayado: se dibuja con ^GB bajo cada línea. */
+  underline?: boolean;
 }
 
 export interface BoxElement extends BaseElement {

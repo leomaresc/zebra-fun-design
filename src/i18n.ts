@@ -278,6 +278,54 @@ export const es = {
   "confirm.delete": "¿Eliminar este elemento?",
   "confirm.deleteBody": "Se quitará del diseño. Puedes deshacerlo.",
   "confirm.deleteYes": "Eliminar",
+
+  // estilo de texto
+  "inspector.style": "Estilo",
+  "inspector.bold": "Negrita",
+  "inspector.italic": "Cursiva",
+  "inspector.underline": "Subrayado",
+  "inspector.italicNote": "ZPL no tiene cursiva: el texto se exporta como imagen 1 bit (^GFA), tal como se ve en el lienzo.",
+
+  // impresión
+  "top.print": "Imprimir",
+  "export.warnItalic": "Hay texto en cursiva: se imprimirá como imagen (^GFA).",
+
+  // código ZPL
+  "code.title": "Código ZPL",
+  "code.subtitle": "Edita el código o pega uno propio y conviértelo en diseño.",
+  "code.hint": "Se interpretan texto, figuras, códigos e imágenes. Lo no reconocido se ignora.",
+  "code.apply": "Aplicar al diseño",
+  "code.edit": "Editar código",
+  "code.open": "Abrir código",
+  "code.load": "Cargar .zpl",
+  "code.empty": "Pega o escribe código ZPL para convertirlo en diseño.",
+  "toast.codeApplied": "Código aplicado al diseño",
+  "toast.codeEmpty": "No hay código ZPL para aplicar",
+
+  // iconos
+  "tool.icons": "Iconos",
+  "icons.title": "Iconos",
+  "icons.subtitle": "Símbolos listos para imprimir. Se insertan como imagen 1 bit.",
+  "toast.icon": "Icono insertado",
+  "icon.male": "Hombre",
+  "icon.female": "Mujer",
+  "icon.unisex": "Unisex",
+  "icon.warning": "Advertencia",
+  "icon.error": "Error",
+  "icon.info": "Información",
+  "icon.check": "Correcto",
+  "icon.fragile": "Frágil",
+  "icon.dry": "Mantener seco",
+  "icon.up": "Este lado arriba",
+  "icon.flammable": "Inflamable",
+  "icon.recycle": "Reciclaje",
+  "icon.prohibited": "Prohibido",
+  "icon.cold": "Mantener frío",
+  "icon.radiation": "Radiactivo",
+  "icon.star": "Estrella",
+  "icon.heart": "Corazón",
+  "icon.arrow": "Flecha",
+  "icon.glass": "Vaso",
 } as const;
 
 export type TKey = keyof typeof es;
@@ -558,6 +606,54 @@ export const en: Record<TKey, string> = {
   "confirm.delete": "Delete this element?",
   "confirm.deleteBody": "It will be removed from the design. You can undo it.",
   "confirm.deleteYes": "Delete",
+
+  // text style
+  "inspector.style": "Style",
+  "inspector.bold": "Bold",
+  "inspector.italic": "Italic",
+  "inspector.underline": "Underline",
+  "inspector.italicNote": "ZPL has no italic: the text is exported as a 1-bit image (^GFA), exactly as drawn on the canvas.",
+
+  // print
+  "top.print": "Print",
+  "export.warnItalic": "There is italic text: it will print as an image (^GFA).",
+
+  // ZPL code
+  "code.title": "ZPL code",
+  "code.subtitle": "Edit the code or paste your own and turn it into a design.",
+  "code.hint": "Text, shapes, barcodes and images are interpreted. Unknown commands are ignored.",
+  "code.apply": "Apply to design",
+  "code.edit": "Edit code",
+  "code.open": "Open code",
+  "code.load": "Load .zpl",
+  "code.empty": "Paste or write ZPL code to turn it into a design.",
+  "toast.codeApplied": "Code applied to the design",
+  "toast.codeEmpty": "No ZPL code to apply",
+
+  // icons
+  "tool.icons": "Icons",
+  "icons.title": "Icons",
+  "icons.subtitle": "Ready-to-print symbols. Inserted as a 1-bit image.",
+  "toast.icon": "Icon inserted",
+  "icon.male": "Male",
+  "icon.female": "Female",
+  "icon.unisex": "Unisex",
+  "icon.warning": "Warning",
+  "icon.error": "Error",
+  "icon.info": "Information",
+  "icon.check": "Check",
+  "icon.fragile": "Fragile",
+  "icon.dry": "Keep dry",
+  "icon.up": "This side up",
+  "icon.flammable": "Flammable",
+  "icon.recycle": "Recyclable",
+  "icon.prohibited": "Prohibited",
+  "icon.cold": "Keep cold",
+  "icon.radiation": "Radioactive",
+  "icon.star": "Star",
+  "icon.heart": "Heart",
+  "icon.arrow": "Arrow",
+  "icon.glass": "Glass",
 };
 
 export const dictionaries: Record<Lang, Record<TKey, string>> = { es, en };
